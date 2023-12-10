@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/bootstrap-table.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
 </head>
@@ -28,9 +29,9 @@
     </div>
 
     <table data-url="data.json" id="resultTable" data-toggle="table" data-sortable="true" data-page-size="40"
-        data-pagination="true" data-search="true" data-show-columns="true"
-        data-show-multi-sort="true" data-show-export="true" data-click-to-select="true" data-toolbar="#toolbar"
-        data-export-types="['excel']" data-filter-control="true" data-export-options='{"fileName": "selectedRows"}'>
+        data-pagination="true" data-search="true" data-show-columns="true" data-show-multi-sort="true"
+        data-show-export="true" data-click-to-select="true" data-toolbar="#toolbar" data-export-types="['excel']"
+        data-filter-control="true" data-export-options='{"fileName": "selectedRows"}'>
         <thead>
             <tr>
                 <th data-checkbox="true"></th>
@@ -53,6 +54,7 @@
         $(document).ready(function () {
             const table = $('#resultTable');
             const resultTableBody = $('#resultTableBody');
+            const exportButton = $('#exportButton');
 
             function showLoadingSpinner() {
                 $('#loadingOverlay').show();
@@ -98,9 +100,26 @@
                 }
             });
 
-            // Export selected rows to Excel
-            $('#exportButton').click(() => {
+            // Handle row selection change
+            table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
                 const selectedRows = table.bootstrapTable('getSelections');
+                exportButton.prop('disabled', selectedRows.length === 0);
+            });
+
+            // Export selected rows to Excel
+            exportButton.click(() => {
+                const selectedRows = table.bootstrapTable('getSelections');
+
+                if (selectedRows.length === 0) {
+                    // Show a SweetAlert message if no rows are selected
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'No Rows Selected',
+                        text: 'Please select at least one row for export.',
+                    });
+                    return;
+                }
+
                 const headers = table.bootstrapTable('getVisibleColumns').map(column => column.field);
                 const data = selectedRows.map(row => headers.map(header => row[header]));
 
@@ -108,6 +127,7 @@
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'Sheet 1');
                 XLSX.writeFile(wb, 'selectedRows.xlsx');
+                table.bootstrapTable('uncheckAll');
             });
         })
     </script>
