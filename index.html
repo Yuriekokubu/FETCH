@@ -121,6 +121,7 @@
             refreshButton.click(() => {
                 // Reset the table to the original data
                 table.bootstrapTable('load', originalData);
+                table.bootstrapTable('uncheckAll');
             });
 
             exportButton.click(() => {
