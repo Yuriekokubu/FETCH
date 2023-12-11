@@ -16,6 +16,11 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
 </head>
 
 <body>
@@ -26,12 +31,17 @@
     </div>
     <h2>MRU Data</h2>
     <div id="toolbar">
-        <button id="exportButton" class="btn btn-success"><i class="fas fa-file-excel"></i>  Export to Excel</button>
+        <button id="exportButton" class="btn btn-success"><i class="fas fa-file-excel"></i> Export to Excel</button>
         <button id="applyFilterButton" class="btn btn-primary">Filter MRU NOT 98</button>
+        <button id="filterPortionButton" class="btn btn-info">Filter Portion</button>
         <button id="refreshButton" class="btn btn-warning">Refresh</button>
     </div>
 
-    <table data-url="data.json" id="resultTable" data-toggle="table" data-sortable="true" data-page-size="40"
+    <canvas class="mb-5" id="myPieChart" style="width: 200px !important; height: 200px !important;"></canvas>
+
+    <div id="dashboard" class="mb-5"></div>
+
+    <table data-url="data.json" id="resultTable" data-toggle="table" data-sortable="true" data-page-size="20"
         data-pagination="true" data-search="true" data-show-columns="true" data-show-multi-sort="true"
         data-show-export="true" data-click-to-select="true" data-toolbar="#toolbar" data-export-types="['excel']"
         data-filter-control="true" data-export-options='{"fileName": "selectedRows"}'>
@@ -59,6 +69,7 @@
             const exportButton = $('#exportButton');
             const applyFilterButton = $('#applyFilterButton');
             const refreshButton = $('#refreshButton');
+            const filterPortion = $('#filterPortionButton');
 
             let originalData = [];
 
@@ -69,6 +80,44 @@
             function hideLoadingSpinner() {
                 $('#loadingOverlay').hide();
             }
+
+            const dashboard = $('#dashboard');
+
+            function createScoreBlock(id, title) {
+                const scoreBlock = $('<div class="score-block"></div>');
+                const h2 = $(`<h2>${title}</h2>`);
+                const countDiv = $(`<div id="${id}">Count: <span></span></div>`);
+
+                scoreBlock.append(h2);
+                scoreBlock.append(countDiv);
+
+                // Add click event to each score block
+                scoreBlock.click(() => {
+                    const count = getCountById(id);
+                    Swal.fire({
+                        title: `${title} Count`,
+                        text: `Count: ${count}`,
+                        icon: 'info',
+                        confirmButtonText: 'OK',
+                        html: '<a href="#" id="downloadMRU" class="download-link">Download to Excel</a>'
+                    });
+                });
+
+                return scoreBlock;
+            }
+
+            function getCountById(id) {
+                // Implement your logic to get the count based on the id
+                // For now, returning a random number for demonstration
+                return Math.floor(Math.random() * 100);
+            }
+
+            // Add score blocks to the dashboard
+            dashboard.append(createScoreBlock('mruCount', 'MRU'));
+            dashboard.append(createScoreBlock('portionCount', 'Portion'));
+            dashboard.append(createScoreBlock('mdenrCount', 'MDENR'));
+            dashboard.append(createScoreBlock('ordCrtToMrCount', 'ORD_CRT_TO_MR'));
+            dashboard.append(createScoreBlock('downloadByMrCount', 'DOWNLOAD_BY_MR'));
 
             table.bootstrapTable({
                 sortName: 'MRU',
@@ -91,6 +140,8 @@
             table.on('load-success.bs.table', function (e, data) {
                 originalData = [...data];
                 hideLoadingSpinner();
+                // Create the initial pie chart
+                createInitialPieChart(originalData);
             });
 
             table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
@@ -117,6 +168,31 @@
                 table.bootstrapTable('load', filteredRows);
             });
 
+            filterPortion.click(() => {
+                const validPortions = ["AR1", "AR6", "HA1"];
+
+                // Filter the originalData based on the conditions
+                const filteredPortionRows = originalData.filter(row => {
+                    return !validPortions.includes(row.PORTION);
+                });
+
+                // Show a SweetAlert with the count of filtered results
+                Swal.fire({
+                    title: 'Filtered Portion Results',
+                    text: `Number of Portion results: ${filteredPortionRows.length}`,
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
+
+                filteredPortionRows.sort((a, b) => a.PORTION.localeCompare(b.PORTION));
+
+                // Load the filtered Portion data into the table using Bootstrap Table's load method
+                // Assuming `table` is your Bootstrap Table instance
+                table.bootstrapTable('load', filteredPortionRows);
+
+                // Create the pie chart after filtering
+                createPieChart(filteredPortionRows);
+            })
 
             refreshButton.click(() => {
                 // Reset the table to the original data
@@ -154,9 +230,105 @@
 
                 table.bootstrapTable('uncheckAll');
             });
+
+            function createPieChart(data) {
+                // Count the number of each category
+                const counts = {
+                    "MRU": data.filter(row => !row.MRU.slice(-4).startsWith("98")).length,
+                    "Portion": data.filter(row => !["AR1", "AR6", "HA1"].includes(row.PORTION)).length,
+                    "MDENR": data.filter(row => !row.MDENR.startsWith("9")).length,
+                    "ORD_CRT_TO_MR": data.filter(row => row.ORD_CRT_TO_MR !== 1 && row.ORD_CRT_TO_MR !== "1.0").length,
+                    "DOWNLOAD_BY_MR": data.filter(row => row.DOWNLOAD_BY_MR !== 1 && row.DOWNLOAD_BY_MR !== "1.0").length,
+                };
+
+                console.log(data.filter(row => !row.MRU.slice(-4).startsWith("98")));
+
+                // Prepare data for Chart.js
+                const chartData = {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ["red", "blue", "green", "purple", "orange"],
+                    }],
+                };
+
+                // Create a pie chart
+                const ctx = document.getElementById('myPieChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData,
+                });
+            }
+
+            // Function to update counts on the dashboard
+            function updateDashboardCounts(counts) {
+                $('#mruCount span').text(counts.MRU);
+                $('#portionCount span').text(counts.Portion);
+                $('#mdenrCount span').text(counts.MDENR);
+                $('#ordCrtToMrCount span').text(counts.ORD_CRT_TO_MR);
+                $('#downloadByMrCount span').text(counts.DOWNLOAD_BY_MR);
+            }
+
+            // Initial pie chart creation
+            function createInitialPieChart(data) {
+                const counts = {
+                    "MRU": data.filter(row => !row.MRU.slice(-4).startsWith("98")).length,
+                    "Portion": data.filter(row => !["AR1", "AR6", "HA1"].includes(row.PORTION)).length,
+                    "MDENR": data.filter(row => !row.MDENR.startsWith("9")).length,
+                    "ORD_CRT_TO_MR": data.filter(row => row.ORD_CRT_TO_MR !== 1 && row.ORD_CRT_TO_MR !== "1.0").length,
+                    "DOWNLOAD_BY_MR": data.filter(row => row.DOWNLOAD_BY_MR !== 1 && row.DOWNLOAD_BY_MR !== "1.0").length,
+                };
+
+                updateDashboardCounts(counts)
+                // Prepare data for Chart.js
+                const chartData = {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ["red", "blue", "green", "purple", "orange"],
+                    }],
+                };
+
+                // Create a pie chart
+                // Create a pie chart
+                const ctx = document.getElementById('myPieChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['MRU', 'Portion', 'MDE', 'ORDER', 'DOWNLOAD'],
+                        datasets: [{
+                            data: Object.values(counts),
+                            backgroundColor: ["red", "blue", "green", "purple", "orange"],
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                            datalabels: {
+                                color: '#fff',
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: (value, context) => {
+                                    return value;
+                                },
+                            },
+                        },
+                        responsive: true,
+                        aspectRatio: 4,
+                    }
+                });
+
+            }
         });
+
     </script>
 
 </body>
 
 </html>
+
+
+<!-- https://yuriekokubu.github.io/MRU_DPS/ -->
