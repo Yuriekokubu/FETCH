@@ -7,6 +7,7 @@
     <link type="text/css" rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.18.3/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
@@ -25,7 +26,9 @@
     </div>
     <h2>MRU Data</h2>
     <div id="toolbar">
-        <button id="exportButton" class="btn btn-success">Export to Excel</button>
+        <button id="exportButton" class="btn btn-success"><i class="fas fa-file-excel"></i>  Export to Excel</button>
+        <button id="applyFilterButton" class="btn btn-primary">Filter MRU NOT 98</button>
+        <button id="refreshButton" class="btn btn-warning">Refresh</button>
     </div>
 
     <table data-url="data.json" id="resultTable" data-toggle="table" data-sortable="true" data-page-size="40"
@@ -53,23 +56,24 @@
     <script>
         $(document).ready(function () {
             const table = $('#resultTable');
-            const resultTableBody = $('#resultTableBody');
             const exportButton = $('#exportButton');
+            const applyFilterButton = $('#applyFilterButton');
+            const refreshButton = $('#refreshButton');
+
+            let originalData = [];
 
             function showLoadingSpinner() {
                 $('#loadingOverlay').show();
             }
 
-            // Hide the loading spinner
             function hideLoadingSpinner() {
                 $('#loadingOverlay').hide();
             }
 
-            // Initialize the Bootstrap table
             table.bootstrapTable({
                 sortName: 'MRU',
                 sortOrder: 'asc',
-                sidePagination: 'client',
+                sidePagination: 'server',
                 pagination: true,
                 showColumns: true,
                 showRefresh: true,
@@ -79,39 +83,50 @@
                 showExport: true,
                 clickToSelect: true,
                 toolbar: '#toolbar',
+                clickToSelect: true,
+                clickToSelectMultiple: true,
             });
 
-            // Hide the loading spinner after table initialization
-            hideLoadingSpinner();
-
-            $('#resultTable').on('check.bs.table', function (e, row) {
-                const currentIndex = $(this).bootstrapTable('getData').indexOf(row);
-                const selectedRows = $(this).bootstrapTable('getSelections');
-                const lastSelectedIndex = $(this).bootstrapTable('getData').indexOf(selectedRows[selectedRows.length - 1]);
-
-                if (currentIndex > lastSelectedIndex) {
-                    for (let i = lastSelectedIndex + 1; i < currentIndex; i++) {
-                        $(this).bootstrapTable('check', i);
-                    }
-                } else {
-                    for (let i = currentIndex + 1; i <= lastSelectedIndex; i++) {
-                        $(this).bootstrapTable('check', i);
-                    }
-                }
+            // Load the original data when the table is loaded
+            table.on('load-success.bs.table', function (e, data) {
+                originalData = [...data];
+                hideLoadingSpinner();
             });
 
-            // Handle row selection change
             table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
                 const selectedRows = table.bootstrapTable('getSelections');
                 exportButton.prop('disabled', selectedRows.length === 0);
             });
 
-            // Export selected rows to Excel
+            applyFilterButton.click(() => {
+                // Filter the originalData based on the condition
+                const filteredRows = originalData.filter(row => {
+                    const lastFourCharacters = row.MRU.slice(-4);
+                    return !lastFourCharacters.startsWith("98");
+                });
+
+                Swal.fire({
+                    title: 'Filtered Results',
+                    text: `Number of results: ${filteredRows.length}`,
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
+
+                // Load the filtered data into the table using Bootstrap Table's load method
+                // Assuming `table` is your Bootstrap Table instance
+                table.bootstrapTable('load', filteredRows);
+            });
+
+
+            refreshButton.click(() => {
+                // Reset the table to the original data
+                table.bootstrapTable('load', originalData);
+            });
+
             exportButton.click(() => {
                 const selectedRows = table.bootstrapTable('getSelections');
 
                 if (selectedRows.length === 0) {
-                    // Show a SweetAlert message if no rows are selected
                     Swal.fire({
                         icon: 'warning',
                         title: 'No Rows Selected',
@@ -120,6 +135,7 @@
                     return;
                 }
 
+                // Continue with the export logic for selected rows
                 const headers = table.bootstrapTable('getVisibleColumns').map(column => column.field);
                 const data = selectedRows.map(row => headers.map(header => row[header]));
 
@@ -127,9 +143,17 @@
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'Sheet 1');
                 XLSX.writeFile(wb, 'selectedRows.xlsx');
+
+                // Display SweetAlert with total selected rows count
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Export Successful',
+                    html: `Total selected rows: ${selectedRows.length}`,
+                });
+
                 table.bootstrapTable('uncheckAll');
             });
-        })
+        });
     </script>
 
 </body>

@@ -1,5 +1,5 @@
 [
-	{ "MRU": "ABAH9801", "TERMTEXT": "การไฟฟ้าอำเภอบ้านโฮ่ง9801", "PORTION": "AR1", "MDENR": "901", "ORD_CRT_TO_MR": 1.0, "DOWNLOAD_BY_MR": 1.0, "ABL_Z": "ABAH" },
+	{ "MRU": "ABAH9101", "TERMTEXT": "การไฟฟ้าอำเภอบ้านโฮ่ง9801", "PORTION": "AR1", "MDENR": "901", "ORD_CRT_TO_MR": 1.0, "DOWNLOAD_BY_MR": 1.0, "ABL_Z": "ABAH" },
 	{ "MRU": "ABAH9802", "TERMTEXT": "การไฟฟ้าอำเภอบ้านโฮ่ง9802", "PORTION": "HA1", "MDENR": "901", "ORD_CRT_TO_MR": 1.0, "DOWNLOAD_BY_MR": 1.0, "ABL_Z": "ABAH" },
 	{ "MRU": "ABAH9803", "TERMTEXT": "AMR แรงต่ำ 9803", "PORTION": "AR6", "MDENR": "901", "ORD_CRT_TO_MR": 1.0, "DOWNLOAD_BY_MR": 1.0, "ABL_Z": "ABAH" },
 	{ "MRU": "ABAH9804", "TERMTEXT": "AMI แรงต่ำ 9804", "PORTION": "AR6", "MDENR": "901", "ORD_CRT_TO_MR": 1.0, "DOWNLOAD_BY_MR": 1.0, "ABL_Z": "ABAH" },
