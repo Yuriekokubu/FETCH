@@ -41,10 +41,10 @@
 
     <div id="dashboard" class="mb-5"></div>
 
-    <table data-url="data.json" id="resultTable" data-toggle="table" data-sortable="true" data-page-size="20"
-        data-pagination="true" data-search="true" data-show-columns="true" data-show-multi-sort="true"
-        data-show-export="true" data-click-to-select="true" data-toolbar="#toolbar" data-export-types="['excel']"
-        data-filter-control="true" data-export-options='{"fileName": "selectedRows"}'>
+    <table data-url="http://emi-hfu.pea.co.th/API_BILL/InfoAllMRU" id="resultTable" data-toggle="table"
+        data-sortable="true" data-page-size="20" data-pagination="true" data-search="true" data-show-columns="true"
+        data-show-multi-sort="true" data-show-export="true" data-click-to-select="true" data-toolbar="#toolbar"
+        data-export-types="['excel']" data-filter-control="true" data-export-options='{"fileName": "selectedRows"}'>
         <thead>
             <tr>
                 <th data-checkbox="true"></th>
@@ -192,7 +192,7 @@
 
                 // Create the pie chart after filtering
                 createPieChart(filteredPortionRows);
-            })
+            });
 
             refreshButton.click(() => {
                 // Reset the table to the original data
@@ -279,7 +279,7 @@
                     "DOWNLOAD_BY_MR": data.filter(row => row.DOWNLOAD_BY_MR !== 1 && row.DOWNLOAD_BY_MR !== "1.0").length,
                 };
 
-                updateDashboardCounts(counts)
+                updateDashboardCounts(counts);
                 // Prepare data for Chart.js
                 const chartData = {
                     labels: Object.keys(counts),
