@@ -1,21 +1,24 @@
 name: Fetch API Data
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Fetch API Data
-              run: |
-                  curl -o api-data.json http://emi-hfu.pea.co.th/API_BILL/InfoAllMRU?search=
-                  cp api-data.json docs/  # Assuming your GitHub Pages source is in the "docs" folder
-                  git add docs/api-data.json
-                  git config --local user.email "actions@github.com"
-                  git config --local user.name "GitHub Actions"
-                  git commit -m "Update API data"
-                  git push
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Fetch API Data
+        run: |
+          curl -o api-data.json http://emi-hfu.pea.co.th/API_BILL/InfoAllMRU?search=
+          cp api-data.json docs/  # Assuming your GitHub Pages source is in the "docs" folder
+          git add docs/api-data.json
+          git config --local user.email "60240233118@udru.ac.th"
+          git config --local user.name "yuriekokubu"
+          git commit -m "Update API data"
+          git push
